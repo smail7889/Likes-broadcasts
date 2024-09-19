@@ -106,7 +106,20 @@ function startBot(token, prefix = '!') {
           `;
 
           await progressMessage.edit(resultMessage);
-        }
+        } } else if (command === 'set-name') {
+    const newName = args.join(' ');
+
+    if (!newName) {
+      return message.channel.send('يرجى تقديم اسم جديد للبوت.');
+    }
+
+    try {
+      await bot.user.setUsername(newName);
+      message.channel.send(`تم تغيير اسم البوت إلى **${newName}**`);
+    } catch (err) {
+      message.channel.send('فشل في تغيير الاسم. تأكد من أن الاسم يتوافق مع متطلبات Discord.');
+      console.error('Error changing bot name:', err);
+    }
       });
 
     })

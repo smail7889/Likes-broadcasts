@@ -61,6 +61,9 @@ function startBot(token, prefix = '!') {
     .then(() => {
       activeBots[token] = { bot, prefix };
 
+      if (!config.owners.includes(message.author.id)) {
+          return message.channel.send('ليس لديك الإذن لاستخدام هذا الأمر.');
+      }
       bot.on('messageCreate', async (message) => {
         if (!message.content.startsWith(prefix) || message.author.bot) return;
 

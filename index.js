@@ -96,6 +96,20 @@ function startBot(token, prefix = '!') {
             message.channel.send('فشل في تغيير الاسم. تأكد من أن الاسم يتوافق مع متطلبات Discord.');
             console.error('Error changing bot name:', err);
           }
+        } else if (command === 'set-avatar') {
+  const avatarUrl = args[0];
+
+  if (!avatarUrl) {
+    return message.channel.send('يرجى تقديم URL لصورة جديدة.');
+  }
+
+  try {
+    await bot.user.setAvatar(avatarUrl);
+    message.channel.send('تم تغيير صورة البروفايل بنجاح!');
+  } catch (err) {
+    message.channel.send('فشل في تغيير صورة البروفايل. تأكد من أن URL صالح.');
+    console.error('Error changing bot avatar:', err);
+  }
         }
       });
     })

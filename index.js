@@ -58,13 +58,14 @@ function startBot(token, prefix = '!') {
       bot.on('messageCreate', async (message) => {
         if (!message.content.startsWith(prefix) || message.author.bot) return;
 
-        if (!message.member.permissions.has('Administrator')) {
-    return message.channel.send('ليس لديك الإذن لاستخدام هذا الأمر. هذا الأمر مخصص للمسؤولين فقط.');
-  }
+        
         const args = message.content.slice(prefix.length).trim().split(/ +/);
         const command = args.shift().toLowerCase();
 
         if (command === 'bc') {
+          if (!message.member.permissions.has('Administrator')) {
+    return message.channel.send('ليس لديك الإذن لاستخدام هذا الأمر. هذا الأمر مخصص للمسؤولين فقط.');
+          }
           const broadcastMessage = args.join(' ');
           if (!broadcastMessage) {
             return message.channel.send('Please provide a message to broadcast.');
@@ -88,6 +89,9 @@ function startBot(token, prefix = '!') {
 
           await progressMessage.edit(`**تم الانتهاء من الارسال | ✅**\n**__النتائج :__**\n- **تم الارسال الى : \`${successCount}\`**\n- **فشل الارسال الى : \`${failureCount}\`**`);
         } else if (command === 'set-name') {
+          if (!message.member.permissions.has('Administrator')) {
+    return message.channel.send('ليس لديك الإذن لاستخدام هذا الأمر. هذا الأمر مخصص للمسؤولين فقط.');
+          }
           const newName = args.join(' ');
           if (!newName) {
             return message.channel.send('يرجى تقديم اسم جديد للبوت.');
@@ -101,6 +105,9 @@ function startBot(token, prefix = '!') {
             console.error('Error changing bot name:', err);
           }
         } else if (command === 'set-avatar') {
+          if (!message.member.permissions.has('Administrator')) {
+    return message.channel.send('ليس لديك الإذن لاستخدام هذا الأمر. هذا الأمر مخصص للمسؤولين فقط.');
+          }
   const avatarUrl = args[0];
 
   if (!avatarUrl) {

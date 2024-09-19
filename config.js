@@ -2,8 +2,8 @@ module.exports = {
   owners: ['915689279605342218'],
 
   discord_auth: {
-    clientId: '1231273898813952060',
-    clientSecret: '6_A6GqVXjMAJ7WPgFY1I1xq28fYe6z1i',
+    clientId: '1279440380701708431',
+    clientSecret: 'alFK4Bb6DOsHWiEUixlUPfq0mvnsloAs',
     callback: 'https://like-store-broadcast.onrender.com/auth/discord/callback',
   }
 }

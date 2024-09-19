@@ -43,12 +43,7 @@ const activeBots = {};
 const allowedUserIds = config.owners;
 
 function startBot(token, prefix = '!') {
-  const bot = new Client({ intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildMembers
-  ] });
+  const bot = new Client({ intents: 131071, });
 
   bot.login(token)
     .then(() => {

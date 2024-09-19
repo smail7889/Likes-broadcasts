@@ -68,9 +68,7 @@ function startBot(token, prefix = '!') {
         const command = args.shift().toLowerCase();
 
         // تحقق مما إذا كان المستخدم هو أحد المالكين
-        if (!allowedUserIds.includes(message.author.id)) {
-          return message.channel.send('ليس لديك الإذن لاستخدام هذا الأمر.');
-        }
+        
 
         if (command === 'bc') {
           const broadcastMessage = args.join(' ');

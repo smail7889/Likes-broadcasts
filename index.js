@@ -120,6 +120,7 @@ function startBot(token, prefix = '!') {
       message.channel.send('فشل في تغيير الاسم. تأكد من أن الاسم يتوافق مع متطلبات Discord.');
       console.error('Error changing bot name:', err);
     }
+        }
       });
 
     })

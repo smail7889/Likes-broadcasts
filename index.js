@@ -54,9 +54,13 @@ function startBot(token, prefix = '!') {
     .then(() => {
       activeBots[token] = { bot, prefix };
 
+      
       bot.on('messageCreate', async (message) => {
         if (!message.content.startsWith(prefix) || message.author.bot) return;
 
+        if (!message.member.permissions.has('Administrator')) {
+    return message.channel.send('ليس لديك الإذن لاستخدام هذا الأمر. هذا الأمر مخصص للمسؤولين فقط.');
+  }
         const args = message.content.slice(prefix.length).trim().split(/ +/);
         const command = args.shift().toLowerCase();
 

@@ -199,6 +199,24 @@ app.post('/add-token', (req, res) => {
     });
 });
 
+app.post('/edit-token', (req, res) => {
+    const botId = req.body.id;
+    const newPrefix = req.body.prefix;
+
+    Token.findOneAndUpdate({ id: botId }, { prefix: newPrefix }, { new: true })
+        .then(updatedToken => {
+            if (updatedToken) {
+                // منطق لتحديث البوت النشط إذا كان قيد التشغيل
+            }
+            res.redirect('/');
+        })
+        .catch(err => {
+            console.error('Error updating prefix:', err);
+            res.redirect('/?error=Failed to update prefix');
+        });
+});
+
+
 app.post('/delete-token', (req, res) => {
   const botId = req.body.id;
 

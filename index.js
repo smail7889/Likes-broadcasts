@@ -2,10 +2,10 @@ const express = require('express');
 const session = require('express-session');
 const passport = require('passport');
 const DiscordStrategy = require('passport-discord').Strategy;
-const fs = require('fs');
+const mongoose = require('mongoose');
 const { Client, GatewayIntentBits } = require('discord.js');
-const path = require('path');
 const config = require('./config');
+const Token = require('./models/Token'); // استيراد نموذج Token
 const app = express();
 
 app.set('view engine', 'ejs');
@@ -18,6 +18,12 @@ app.use(session({
   saveUninitialized: false,
 }));
 
+// Mongoose setup
+mongoose.connect(config.mongoUri, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log('MongoDB connected'))
+  .catch(err => console.error('MongoDB connection error:', err));
+
+// Passport configuration
 passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((obj, done) => done(null, obj));
 
@@ -33,21 +39,8 @@ passport.use(new DiscordStrategy({
 app.use(passport.initialize());
 app.use(passport.session());
 
-const tokensFilePath = path.join(__dirname, 'database/tokens.json');
-
-function loadTokens() {
-  if (!fs.existsSync(tokensFilePath)) {
-    fs.writeFileSync(tokensFilePath, '[]');
-  }
-  return JSON.parse(fs.readFileSync(tokensFilePath));
-}
-
-function saveTokens(tokens) {
-  fs.writeFileSync(tokensFilePath, JSON.stringify(tokens, null, 2));
-}
-
 const activeBots = {};
-const allowedUserIds = config.owners; // استخدم مالكي البوت من ملف التكوين
+const allowedUserIds = config.owners;
 
 function startBot(token, prefix = '!') {
   const bot = new Client({ intents: [
@@ -66,9 +59,6 @@ function startBot(token, prefix = '!') {
 
         const args = message.content.slice(prefix.length).trim().split(/ +/);
         const command = args.shift().toLowerCase();
-
-        // تحقق مما إذا كان المستخدم هو أحد المالكين
-        
 
         if (command === 'bc') {
           const broadcastMessage = args.join(' ');
@@ -130,17 +120,22 @@ function stopBot(token) {
 }
 
 function startAllBots() {
-  const tokens = loadTokens();
-  tokens.forEach(botData => {
-    startBot(botData.token, botData.prefix);
-  });
-
-  console.log(`Total bots running: ${Object.keys(activeBots).length}`);
+  Token.find()
+    .then(tokens => {
+      tokens.forEach(botData => {
+        startBot(botData.token, botData.prefix);
+      });
+      console.log(`Total bots running: ${Object.keys(activeBots).length}`);
+    })
+    .catch(err => console.error('Error loading tokens:', err));
 }
 
 app.get('/', (req, res) => {
-  const tokens = loadTokens();
-  res.render('index', { user: req.user, tokens, error: req.query.error || null });
+  Token.find()
+    .then(tokens => {
+      res.render('index', { user: req.user, tokens, error: req.query.error || null });
+    })
+    .catch(err => console.error('Error fetching tokens:', err));
 });
 
 app.get('/login', passport.authenticate('discord'));
@@ -167,20 +162,23 @@ app.post('/add-token', (req, res) => {
 
   bot.login(token)
     .then(() => {
-      const botData = {
+      const botData = new Token({
         token,
         name: bot.user.username,
         id: bot.user.id,
         prefix
-      };
+      });
 
-      const tokens = loadTokens();
-      tokens.push(botData);
-      saveTokens(tokens);
-
-      startBot(token, prefix);
-      bot.destroy();
-      res.redirect('/');
+      botData.save()
+        .then(() => {
+          startBot(token, prefix);
+          bot.destroy();
+          res.redirect('/');
+        })
+        .catch(err => {
+          console.error('Error saving token:', err);
+          res.redirect('/?error=Failed to save token');
+        });
     })
     .catch(() => {
       res.redirect('/?error=Invalid Token');
@@ -190,20 +188,21 @@ app.post('/add-token', (req, res) => {
 app.post('/delete-token', (req, res) => {
   const botId = req.body.id;
 
-  let tokens = loadTokens();
-  const tokenIndex = tokens.findIndex(token => token.id === botId);
-
-  if (tokenIndex !== -1) {
-    const token = tokens[tokenIndex].token;
-    stopBot(token);
-    tokens.splice(tokenIndex, 1);
-    saveTokens(tokens);
-  }
-
-  res.redirect('/');
+  Token.findOneAndDelete({ id: botId })
+    .then(deletedToken => {
+      if (deletedToken) {
+        stopBot(deletedToken.token);
+      }
+      res.redirect('/');
+    })
+    .catch(err => {
+      console.error('Error deleting token:', err);
+      res.redirect('/?error=Failed to delete token');
+    });
 });
 
 app.listen(3000, () => {
   console.log('Server is running on http://localhost:3000');
   startAllBots();
 });
+           

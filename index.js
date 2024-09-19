@@ -106,7 +106,7 @@ function startBot(token, prefix = '!') {
           `;
 
           await progressMessage.edit(resultMessage);
-        } } else if (command === 'set-name') {
+        }  else if (command === 'set-name') {
     const newName = args.join(' ');
 
     if (!newName) {

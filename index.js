@@ -125,7 +125,7 @@ function startBot(token, prefix = '!') {
   const infoMessage = `
     **معلومات البوت:**
     - **الاسم:** ${botName}
-    - **ID:** ${botId}
+    - **الأيدي:** ${botId}
     - **عدد السيرفرات:** ${guildCount}
     - **البريفيكس:** ${botPrefix}
   `;

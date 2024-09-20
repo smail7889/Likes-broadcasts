@@ -116,6 +116,21 @@ function startBot(token, prefix = '!') {
     message.channel.send('فشل في تغيير صورة البروفايل. تأكد من أن URL صالح.');
     console.error('Error changing bot avatar:', err);
   }
+        } else if (command === 'info') {
+  const guildCount = bot.guilds.cache.size;
+  const botName = bot.user.username;
+  const botId = bot.user.id;
+  const botPrefix = activeBots[token]?.prefix || '!';
+
+  const infoMessage = `
+    **معلومات البوت:**
+    - **الاسم:** ${botName}
+    - **ID:** ${botId}
+    - **عدد السيرفرات:** ${guildCount}
+    - **البريفيكس:** ${botPrefix}
+  `;
+
+  message.channel.send(infoMessage);
         }
       });
     })

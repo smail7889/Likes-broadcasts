@@ -5,6 +5,6 @@ module.exports = {
   discord_auth: {
     clientId: '1286793146365251685',
     clientSecret: '4z4Ejxs-yb4tFHfya6SmIFRjg_ssPi-x',
-    callback: 'https://likes-broadcasts.onrender.com/auth/discord/callback',
+    callback: 'https://like-store-broadcast.onrender.com/auth/discord/callback',
   }
 }
